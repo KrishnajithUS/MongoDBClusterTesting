@@ -76,28 +76,30 @@ type AdvertisementHistoryMDBTimeSeries struct {
 
 
 
-func CreateIndex(collection *mongo.Collection, ctx context.Context, indexes []string, sortOrders []int) {
-	if len(indexes) != len(sortOrders) {
-		panic("Index Fields Must Match with Sort orders")
-	}
-	if len(indexes) == 0 || len(sortOrders) == 0 {
-		panic("Index & sort orderes cann't be zero")
-	}
-	var bsonData bson.D
+func CreateIndex(collection *mongo.Collection, ctx context.Context) {
 
-	for i := 0; i < len(indexes); i++ {
-		m1 := bson.E{Key: indexes[i], Value: sortOrders[i]}
-		bsonData = append(bsonData, m1)
-
-	}
-	indexModel := mongo.IndexModel{
-		Keys: bsonData,
-	}
-	name, err := collection.Indexes().CreateOne(ctx, indexModel)
+	indexes := []mongo.IndexModel{
+        {
+            Keys: bson.D{{"deviceId", 1}, {"audioPlayed", 1}},
+        },
+        {
+            Keys: bson.D{{"deviceId", 1}, {"tMsgRecvByServer", 1}},
+        },
+        {
+            Keys: bson.D{{"reqRefNo", 1}},
+        },
+        {
+            Keys: bson.D{{"tMsgRecvByServer", 1}, {"audioPlayed", 1}},
+        },
+    }
+	name, err := collection.Indexes().CreateMany(ctx, indexes)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Name of Index Created: " + name)
+	for i := range name{
+	fmt.Println("Name of Index Created: " + name[i])
+
+	}
 
 }
 

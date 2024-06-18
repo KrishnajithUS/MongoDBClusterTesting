@@ -76,9 +76,6 @@ func getReplicaSetStatus(client *mongo.Client, ctx context.Context) (primary str
 func RunNonClustered() {
 
 	lst := []int{1000000}
-	if len(os.Args) < 1 {
-		panic("Usage: program [readPreference]")
-	}
 
 	var uri string
 
@@ -104,10 +101,13 @@ func RunNonClustered() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	defer logEvents(DB, advertisementHistory, ctx)
-
+	fmt.Println("Outside Main Loop", lst)
+	// create index
+	queries.CreateIndex(advertisementHistory, ctx)
 	for j := range lst {
 		startWrite := time.Now()
 		avg := 0.0
+		fmt.Println("Inside Main Loop", lst[j])
 		for i := 0; i < lst[j]; i++ {
 			singleTransactionStartTime := time.Now()
 			queries.MongoWrite(advertisementHistory, ctx)
@@ -115,7 +115,7 @@ func RunNonClustered() {
 			avg += endOfTransaction
 		}
 		elapsedWrite := time.Since(startWrite).Seconds()
-		insertionPerSecond := float64(lst[j])/elapsedWrite
+		insertionPerSecond := float64(lst[j]) / elapsedWrite
 		log.Printf("MongoWrite took %f for %d iterations", elapsedWrite, lst[j])
 		log.Printf("Insertions Per Second %f", insertionPerSecond)
 		log.Printf("Average Insertions %f", avg/float64(lst[j]))
