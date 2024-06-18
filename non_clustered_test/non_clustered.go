@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
+
+	// "os"
 	"test/queries"
 	"time"
 
@@ -104,58 +105,63 @@ func RunNonClustered() {
 	fmt.Println("Outside Main Loop", lst)
 	// create index
 	queries.CreateIndex(advertisementHistory, ctx)
-	for j := range lst {
-		startWrite := time.Now()
-		avg := 0.0
-		fmt.Println("Inside Main Loop", lst[j])
-		for i := 0; i < lst[j]; i++ {
-			singleTransactionStartTime := time.Now()
-			queries.MongoWrite(advertisementHistory, ctx)
-			endOfTransaction := time.Since(singleTransactionStartTime).Seconds()
-			avg += endOfTransaction
-		}
-		elapsedWrite := time.Since(startWrite).Seconds()
-		insertionPerSecond := float64(lst[j]) / elapsedWrite
-		log.Printf("MongoWrite took %f for %d iterations", elapsedWrite, lst[j])
-		log.Printf("Insertions Per Second %f", insertionPerSecond)
-		log.Printf("Average Insertions %f", avg/float64(lst[j]))
+	// for j := range lst {
 
-		// log.Printf("------ Mongo Unordered Read ------")
-		// startRead := time.Now()
-		// queries.MongoRead(advertisementHistory, ctx)
-		// elapsedRead := time.Since(startRead).Seconds()
-		// log.Printf("MongoRead took %f", elapsedRead)
-		// log.Printf("Reads Per Second %v", float64(j)/elapsedRead)
+	var singleTransactionStartTime time.Time
+	var endOfTransaction float64
 
-		// log.Printf("------ Mongo Ordered Read ------")
-		// startRead = time.Now()
-		// queries.MongoReadSortByID(advertisementHistory, ctx)
-		// elapsedRead = time.Since(startRead).Seconds()
-		// log.Printf("MongoRead Sort By Id %f", elapsedRead)
-		// log.Printf("Reads Per Second %v", float64(j)/elapsedRead)
+	startWrite := time.Now()
+	avg := 0.0
 
-		// Log the servers used for write and read operations
-		log.Println("Write operations were performed on the following servers:")
-		for server, count := range writeServers {
-			log.Printf("Server: %s, Count: %d", server, count)
-		}
-
-		log.Println("Read operations were performed on the following servers:")
-		for server, count := range readServers {
-			log.Printf("Server: %s, Count: %d", server, count)
-		}
-
+	fmt.Println("Inside Main Loop", lst[0])
+	for i := 0; i < lst[0]; i++ {
+		singleTransactionStartTime = time.Now()
+		queries.MongoWrite(advertisementHistory, ctx)
+		endOfTransaction = time.Since(singleTransactionStartTime).Seconds()
+		avg += endOfTransaction
 	}
-	file, err := os.OpenFile("events.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatalf("Failed to open log file: %s", err)
-	}
-	defer file.Close()
+	elapsedWrite := time.Since(startWrite).Seconds()
+	insertionPerSecond := float64(lst[0]) / elapsedWrite
+	log.Printf("MongoWrite took %f for %d iterations", elapsedWrite, lst[0])
+	log.Printf("Insertions Per Second %f", insertionPerSecond)
+	log.Printf("Average Insertions %f", avg/float64(lst[0]))
 
-	// Create a logger that writes to the file
-	logger := log.New(file, "", log.LstdFlags)
+	// log.Printf("------ Mongo Unordered Read ------")
+	// startRead := time.Now()
+	// queries.MongoRead(advertisementHistory, ctx)
+	// elapsedRead := time.Since(startRead).Seconds()
+	// log.Printf("MongoRead took %f", elapsedRead)
+	// log.Printf("Reads Per Second %v", float64(j)/elapsedRead)
 
-	for i := range eventArray {
-		logger.Println("Writing Events", eventArray[i])
+	// log.Printf("------ Mongo Ordered Read ------")
+	// startRead = time.Now()
+	// queries.MongoReadSortByID(advertisementHistory, ctx)
+	// elapsedRead = time.Since(startRead).Seconds()
+	// log.Printf("MongoRead Sort By Id %f", elapsedRead)
+	// log.Printf("Reads Per Second %v", float64(j)/elapsedRead)
+
+	// Log the servers used for write and read operations
+	log.Println("Write operations were performed on the following servers:")
+	for server, count := range writeServers {
+		log.Printf("Server: %s, Count: %d", server, count)
 	}
+
+	log.Println("Read operations were performed on the following servers:")
+	for server, count := range readServers {
+		log.Printf("Server: %s, Count: %d", server, count)
+	}
+
+	// }
+	// file, err := os.OpenFile("events.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// if err != nil {
+	// 	log.Fatalf("Failed to open log file: %s", err)
+	// }
+	// defer file.Close()
+
+	// // Create a logger that writes to the file
+	// logger := log.New(file, "", log.LstdFlags)
+
+	// for i := range eventArray {
+	// 	logger.Println("Writing Events", eventArray[i])
+	// }
 }

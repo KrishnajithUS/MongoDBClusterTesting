@@ -109,11 +109,13 @@ func RunClustered() {
 
 	for j := range lst {
 		startWrite := time.Now()
+		var singleTransactionStartTime time.Time
+		var endOfTransaction float64
 		avg := 0.0
 		for i := 0; i < lst[j]; i++ {
-			singleTransactionStartTime := time.Now()
+			singleTransactionStartTime = time.Now()
 			queries.MongoWriteClustered(advertisementHistory, ctx)
-			endOfTransaction := time.Since(singleTransactionStartTime).Seconds()
+			endOfTransaction = time.Since(singleTransactionStartTime).Seconds()
 			avg += endOfTransaction
 		}
 

@@ -130,7 +130,7 @@ func MongoWriteClustered(collection *mongo.Collection, ctx context.Context) {
 	
 
 	// Insert multiple documents
-	_, err := collection.InsertOne(context.TODO(), doc)
+	_, err := collection.InsertOne(ctx, doc)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -159,7 +159,7 @@ func MongoWrite(collection *mongo.Collection, ctx context.Context) {
 					
 	}
 	// Insert multiple documents
-	_, err := collection.InsertOne(context.TODO(), doc)
+	_, err := collection.InsertOne(ctx, doc)
 	if err != nil {
 		log.Fatal(err)
 	}
