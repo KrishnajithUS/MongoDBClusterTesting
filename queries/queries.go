@@ -13,7 +13,7 @@ import (
 )
 
 var globalCounter int64 = 0
-var maxRecord int64 = 10000
+var maxRecord int64 = 1000000
 
 type AdvertisementHistoryMDB struct {
 	ID                   primitive.ObjectID `bson:"_id,omitempty"`
@@ -280,6 +280,42 @@ func GetAllIndexInCollectionCluster(db *mongo.Database, collection *mongo.Collec
 	fmt.Println("All Indexes", result)
 }
 
+
+func MongoReadByDevice(collection *mongo.Collection, ctx context.Context, deviceId int64) {
+	var dataAdv []AdvertisementHistoryMDB
+	filter := bson.D{
+		{"deviceId", deviceId},
+	}
+
+	dataAdvCursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		log.Fatalf("Failed to find documents: %v", err)
+	}
+	defer dataAdvCursor.Close(ctx)
+
+	if err = dataAdvCursor.All(ctx, &dataAdv); err != nil {
+		log.Fatalf("Failed to decode documents: %v", err)
+	}
+	fmt.Printf("Number of documents returned: %d\n", len(dataAdv))
+}
+
+func MongoReadClusteredByDevice(collection *mongo.Collection, ctx context.Context, deviceId int64) {
+	var dataAdv []AdvertisementHistoryMDBClustered
+	filter := bson.D{
+		{"deviceId", deviceId},
+
+	}
+	dataAdvCursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		log.Fatalf("Failed to find documents: %v", err)
+	}
+	defer dataAdvCursor.Close(ctx)
+
+	if err = dataAdvCursor.All(ctx, &dataAdv); err != nil {
+		log.Fatalf("Failed to decode documents: %v", err)
+	}
+}
+
 func MongoReadByDeviceAndTimestamp(collection *mongo.Collection, ctx context.Context, deviceId int64, startTime, endTime int64) {
 	var dataAdv []AdvertisementHistoryMDB
 	filter := bson.D{
@@ -319,6 +355,60 @@ func MongoReadClusteredByDeviceAndTimestamp(collection *mongo.Collection, ctx co
 	if err = dataAdvCursor.All(ctx, &dataAdv); err != nil {
 		log.Fatalf("Failed to decode documents: %v", err)
 	}
+}
+
+
+func MongoUpdateDeviceId(collection *mongo.Collection, ctx context.Context, updateFields bson.D) {
+
+
+	findOptions := options.Find().SetLimit(100000).SetProjection(bson.D{{"_id", 1}})
+	cursor, err := collection.Find(ctx,bson.D{},findOptions)
+	if err != nil {
+		log.Fatalf("Failed to find documents: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	var ids []interface{}
+	for cursor.Next(ctx) {
+		var doc bson.M
+		if err = cursor.Decode(&doc); err != nil {
+			log.Fatalf("Failed to decode document: %v", err)
+		}
+		ids = append(ids, doc["_id"])
+	}
+
+	if len(ids) == 0 {
+		fmt.Println("No documents found to update.")
+		return
+	}
+
+	updateFilter := bson.D{{"_id", bson.D{{"$in", ids}}}}
+	update := bson.D{
+		{"$set", updateFields},
+	}
+
+	result, err := collection.UpdateMany(ctx, updateFilter, update)
+	if err != nil {
+		log.Fatalf("Failed to update documents: %v", err)
+	}
+	fmt.Printf("Matched %v documents and updated %v documents.\n", result.MatchedCount, result.ModifiedCount)
+}
+
+func MongoUpdateaudioPlayed(collection *mongo.Collection, ctx context.Context, deviceId int64, tMsgRecvByServer int64, updateFields bson.D) {
+	filter := bson.D{
+		{"deviceId", deviceId},
+		{"tMsgRecvByServer", tMsgRecvByServer},
+	}
+
+	update := bson.D{
+		{"$set", updateFields},
+	}
+
+	result, err := collection.UpdateMany(ctx, filter, update)
+	if err != nil {
+		log.Fatalf("Failed to update documents: %v", err)
+	}
+	fmt.Printf("Matched %v documents and updated %v documents.\n", result.MatchedCount, result.ModifiedCount)
 }
 
 func MongoUpdateClusteredByDeviceAndTimestamp(collection *mongo.Collection, ctx context.Context, deviceId int64, startTime, endTime int64, updateFields bson.D) {
