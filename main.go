@@ -9,7 +9,7 @@ import (
 
 func main() {
 	testType := os.Args
-	if len(testType) >0 && testType[0] == "c" {
+	if len(testType) >0 && testType[1] == "c" {
 		log.Print("------ Starting clustered query ------")
 		clustered_test.RunClustered()
 

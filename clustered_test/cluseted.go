@@ -94,19 +94,21 @@ func RunClustered() {
 		}
 	}()
 
-	DB := client.Database("AdvHistory")
+	DB := client.Database("AdvHistory5")
 
-	cio := bson.D{{"key", bson.D{{"_id", 1}}}, {"unique", true}}
+	// Create the collection with a clustered index on timeStamp
+	cio := bson.D{{"key", bson.D{{"timeStamp", 1}}}, {"unique", true}}
 
 	opts := options.CreateCollection().SetClusteredIndex(cio)
 
 	DB.CreateCollection(context.TODO(), "AdvertisementHistoryMDBClustered", opts)
 	advertisementHistory := DB.Collection("AdvertisementHistoryMDBClustered")
-
+	
 	ctx, cancel := context.WithCancel(context.Background())
+	logEvents(DB, advertisementHistory,ctx)
 	defer cancel()
 	defer logEvents(DB, advertisementHistory, ctx)
-
+	
 	for j := range lst {
 		startWrite := time.Now()
 		var singleTransactionStartTime time.Time
